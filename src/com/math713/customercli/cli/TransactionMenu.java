@@ -32,8 +32,8 @@ public class TransactionMenu {
 
             int option = readInt();
             switch (option){
-                case 1 -> processContract(TransactionType.DEPOSIT);
-                case 2 -> processContract(TransactionType.WITHDRAW);
+                case 1 -> processTransaction(TransactionType.DEPOSIT);
+                case 2 -> processTransaction(TransactionType.WITHDRAW);
                 case 3 -> listByCustomerId();
                 case 4 -> showBalance();
                 case 0 -> { return; }
@@ -42,9 +42,17 @@ public class TransactionMenu {
         }
     }
 
-    private void processContract(TransactionType type){
+    private void processTransaction(TransactionType type){
         int customer_id = askCustomerID();
         BigDecimal amount = askAmount();
+
+        if (type == TransactionType.WITHDRAW) {
+            BigDecimal balance = transactionDAO.getBalance(customer_id);
+            if (amount.compareTo(balance) > 0) {
+                System.out.println("Insufficient funds! Current balance: " + balance);
+                return;
+            }
+        }
 
         Transaction transaction = new Transaction(customer_id, type, amount);
         boolean ok = transactionDAO.insert(transaction);
@@ -74,7 +82,6 @@ public class TransactionMenu {
                     t.getType() == TransactionType.DEPOSIT ? "+" : "-",
                     t.getAmount());
         }
-
     }
 
     public void showBalance(){
@@ -93,8 +100,8 @@ public class TransactionMenu {
                     System.out.println("amount must be > 0");
                     continue;
                 }
-
                 return value.setScale(2, RoundingMode.HALF_UP);
+
             } catch (Exception e) {
                 System.out.println("Invalid amount.");
             }

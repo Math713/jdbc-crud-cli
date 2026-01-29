@@ -44,5 +44,9 @@ public class Transaction {
     public TransactionType getType() {
         return type;
     }
+
+    public void setId(Integer id) {
+        this.id = id;
+    }
 }
 

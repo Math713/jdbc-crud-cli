@@ -15,21 +15,16 @@ public class CustomerMenu {
     public void start() {
         Scanner sc = new Scanner(System.in);
 
-            while (true) {
-                System.out.print("""
-                        
-                        ==============================
-                           CUSTOMER MANAGEMENT CLI
-                        ==============================
-                        1 - List all customers
-                        2 - Find customer by ID
-                        3 - Create new customer
-                        4 - Update existing customer
-                        5 - Delete customer
-                        0 - Exit
-                        ------------------------------
-                        Choose an option:
-                        >\s""");
+        while (true) {
+            System.out.println("\n=== CUSTOMER MANAGEMENT ===");
+            System.out.println("[1] List all customers");
+            System.out.println("[2] Find customer by ID");
+            System.out.println("[3] Create new customer");
+            System.out.println("[4] Update existing customer");
+            System.out.println("[5] Delete customer");
+            System.out.println("[0] Back");
+            System.out.println("Choose: ");
+            System.out.print("> ");
 
                 int option;
                 try {

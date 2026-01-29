@@ -5,9 +5,9 @@ import com.math713.customercli.dao.CustomerDAO;
 
 public class Main {
     public static void main(String[] args){
-        CustomerDAO dao = new CustomerDAO();
-        CustomerMenu menu = new CustomerMenu(dao);
+        CustomerDAO customerDAO = new CustomerDAO();
+        CustomerMenu customerMenu = new CustomerMenu(customerDAO);
 
-        menu.start();
+        customerMenu.start();
     }
 }

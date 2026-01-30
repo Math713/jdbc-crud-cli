@@ -6,6 +6,7 @@ import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 
 public class CustomerDAO {
     private final String url = System.getenv("DB_URL");
@@ -43,7 +44,7 @@ public class CustomerDAO {
     }
 
     public List<Customer> findAll() {
-        String sql = "SELECT id, name, email FROM customers";
+        String sql = "SELECT id, name, email FROM customers WHERE active = true";
         List<Customer> customers = new ArrayList<>();
 
         try (Connection conn = getConnection();
@@ -64,10 +65,10 @@ public class CustomerDAO {
         }
     }
 
-    public Customer findById(int id) {
+    public Optional<Customer> findById(int id) {
         validateId(id);
 
-        String sql = "SELECT id, name, email FROM customers WHERE id = ?";
+        String sql = "SELECT id, name, email FROM customers WHERE id = ? AND active = true";
 
         try (Connection conn = getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -76,13 +77,12 @@ public class CustomerDAO {
 
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
-                    return new Customer(
+                    return Optional.of(new Customer(
                             rs.getInt("id"),
                             rs.getString("name"),
-                            rs.getString("email")
-                    );
+                            rs.getString("email")));
                 }
-                return null;
+                return Optional.empty();
             }
 
         } catch (SQLException e) {
@@ -96,12 +96,22 @@ public class CustomerDAO {
         String sql = "INSERT INTO customers (name, email) VALUES (?, ?)";
 
         try (Connection conn = getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
+             PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
 
             ps.setString(1, customer.getName());
             ps.setString(2, customer.getEmail());
 
-            return ps.executeUpdate() == 1;
+            int rowsAffected = ps.executeUpdate();
+
+            if (rowsAffected == 1) {
+                try (ResultSet rs = ps.getGeneratedKeys()) {
+                    if (rs.next()) {
+                        customer.setId(rs.getInt(1));
+                    }
+                }
+                return true;
+            }
+            return false;
 
         } catch (SQLIntegrityConstraintViolationException e) {
             throw new RuntimeException("Email already exists: " + customer.getEmail(), e);
@@ -114,7 +124,7 @@ public class CustomerDAO {
         validateId(id);
         validateCustomer(customer);
 
-        String sql = "UPDATE customers SET name = ?, email = ? WHERE id = ?";
+        String sql = "UPDATE customers SET name = ?, email = ? WHERE id = ? AND active = true";
 
         try (Connection conn = getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -132,10 +142,10 @@ public class CustomerDAO {
         }
     }
 
-    public boolean delete(int id) {
+    public boolean delete(int id) { // soft-delete
         validateId(id);
 
-        String sql = "DELETE FROM customers WHERE id = ?";
+        String sql = "UPDATE customers SET active = false WHERE id = ?";
 
         try (Connection conn = getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -143,7 +153,6 @@ public class CustomerDAO {
             ps.setInt(1, id);
 
             return ps.executeUpdate() == 1;
-
         } catch (SQLException e) {
             throw new RuntimeException("Error deleting customer with id = " + id, e);
         }

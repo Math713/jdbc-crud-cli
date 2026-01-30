@@ -56,14 +56,14 @@ public class CustomerMenu {
                         System.out.print("Id: ");
                         int id = Integer.parseInt(sc.nextLine().trim());
 
-                        Customer found = customerDAO.findById(id);
-                        if (found == null) {
-                            System.out.println("Customer not found.\n");
-                        } else {
-                            System.out.println("ID: " + found.getId());
-                            System.out.println("Name: " + found.getName());
-                            System.out.println("Email: " + found.getEmail() + "\n");
-                        }
+                        customerDAO.findById(id).ifPresentOrElse(
+                                found -> {
+                                    System.out.println("ID: " + found.getId());
+                                    System.out.println("Name: " + found.getName());
+                                    System.out.println("Email: " + found.getEmail());
+                                },
+                                () -> System.out.println("Customer not found or inactive.\n")
+                        );
                     }
 
                     case 3 -> {

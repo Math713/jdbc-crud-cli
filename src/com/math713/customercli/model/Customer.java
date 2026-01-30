@@ -14,8 +14,9 @@ public class Customer {
         this.id = id;
         this.name = name;
         this.email = email;
-
     }
+
+    public void setId(Integer id) {this.id = id;}
 
     public String getEmail() {
         return email;

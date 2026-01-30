@@ -75,10 +75,11 @@ public class TransactionDAO {
         validateCustomerId(customer_id);
 
         String sql = """
-                SELECT id, customer_id, type, amount, created_at
-                FROM transactions
-                WHERE customer_id = ?
-                ORDER BY created_at DESC, id DESC
+                SELECT t.id, t.customer_id, t.type, t.amount, t.created_at
+                FROM transactions t
+                JOIN customers c ON t.customer_id = c.id
+                WHERE t.customer_id = ? AND c.active = true
+                ORDER BY t.created_at DESC, c.id DESC
                 """;
 
         List<Transaction> txList = new ArrayList<>();
@@ -113,13 +114,14 @@ public class TransactionDAO {
         String sql = """
                 SELECT COALESCE(SUM(
                     CASE
-                        WHEN type = 'DEPOSIT' THEN amount
-                        WHEN type = 'WITHDRAW' THEN -amount
+                        WHEN t.type = 'DEPOSIT' THEN t.amount
+                        WHEN t.type = 'WITHDRAW' THEN -t.amount
                         ELSE 0
                     END
                 ), 0) AS balance
-                FROM transactions
-                WHERE customer_id = ?
+                FROM transactions t
+                JOIN customers c ON t.customer_id = c.id
+                WHERE t.customer_id = ? AND c.active = true
                 """;
 
         try (Connection conn = getConnection();
@@ -130,7 +132,7 @@ public class TransactionDAO {
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
                     BigDecimal balance = rs.getBigDecimal("balance");
-                    return balance != null ? balance : BigDecimal.ZERO; // In some cases, even with COALESCE, can return null.
+                    return balance != null ? balance : BigDecimal.ZERO; // In some cases, even with coalesce, can return null.
                 }
                 return BigDecimal.ZERO;
 

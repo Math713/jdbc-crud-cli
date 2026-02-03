@@ -6,15 +6,15 @@ import com.math713.customercli.model.Customer;
 import java.util.Scanner;
 
 public class CustomerMenu {
-    private CustomerDAO customerDAO;
+    private final Scanner sc;
+    private final CustomerDAO customerDAO;
 
-    public CustomerMenu(CustomerDAO customerDAO) {
+    public CustomerMenu(CustomerDAO customerDAO, Scanner sc) {
         this.customerDAO = customerDAO;
+        this.sc = sc;
     }
 
     public void start() {
-        Scanner sc = new Scanner(System.in);
-
         while (true) {
             System.out.println("\n=== CUSTOMER MANAGEMENT ===");
             System.out.println("[1] List all customers");
@@ -26,78 +26,120 @@ public class CustomerMenu {
             System.out.println("Choose: ");
             System.out.print("> ");
 
-                int option;
-                try {
-                    option = Integer.parseInt(sc.nextLine().trim());
-                } catch (NumberFormatException e) {
-                    System.out.println("Invalid option. Please enter a number.\n");
-                    continue;
-                }
+            int option = readInt();
+            switch (option) {
+                case 1 -> listAllCustomers();
+                case 2 -> findCustomerById();
+                case 3 -> createNewCustomer();
+                case 4 -> updateNewCustomer();
+                case 5 -> deleteCustomerById();
+                case 0 -> { return; }
+                default -> System.out.println("Invalid option.");
+            }
+        }
+    }
 
-                switch (option) {
-                    case 0 -> {
-                        System.out.println("Leaving...");
-                        return;
-                    }
+    private void listAllCustomers(){
+        var customers = customerDAO.findAll();
+        System.out.println("Customers (" + customers.size() + "):");
 
-                    case 1 -> {
-                        var customers = customerDAO.findAll();
-                        System.out.println("Customers (" + customers.size() + "):");
+        for (Customer c : customers) {
+            System.out.printf("#%-4d | %-20s | %-30s%n",
+                    c.getId(), c.getName(), c.getEmail());
+        }
+        System.out.println();
+    }
 
-                        for (Customer c : customers) {
-                            System.out.println("ID: " + c.getId() +
-                                    " | Name: " + c.getName() +
-                                    " | Email: " + c.getEmail());
+    private void findCustomerById(){
+        int customer_id = askID();
+        customerDAO.findById(customer_id).ifPresentOrElse(
+                found -> {
+                    System.out.println("ID: " + found.getId());
+                    System.out.println("Name : " + found.getName());
+                    System.out.println("Email: " + found.getEmail());
+                    System.out.println();
+                },
+                () -> System.out.println("Customer not found or inactive\n")
+        );
+    }
+
+    private void createNewCustomer() {
+        String name = askString("Name");
+        String email = askString("Email");
+
+        try {
+            boolean inserted = customerDAO.insert(new Customer(name, email));
+            System.out.println(inserted ? "Customer created successfully!\n" : "Could not create customer. Try again.\n");
+
+        } catch (RuntimeException e) {
+            if (e.getMessage().contains("Email already exists")) {
+                System.out.println("Error: The email '" + email + "' is already in use.\n");
+            } else {
+                System.out.println("An unexpected error occurred: " + e.getMessage());
+            }
+        }
+    }
+
+    private void updateNewCustomer() {
+        int id = askID();
+        customerDAO.findById(id).ifPresentOrElse(
+                existing -> {
+                    System.out.println("Updating: " + existing.getName());
+                    String newName = askString("New Name (current: " + existing.getName() + ")");
+                    String newEmail = askString("New Email (current: " + existing.getEmail() + ")");
+
+                    try {
+                        boolean updated = customerDAO.update(id, new Customer(newName, newEmail));
+                        System.out.println(updated ? "Customer updated.\n" : "Error updating.\n");
+
+                    } catch (RuntimeException e) {
+                        if (e.getMessage().contains("Email already exists")){
+                            System.out.println("Error: The email '" + existing.getEmail() + "' is already in use.\n");
+                        } else {
+                            System.out.println("An unexpected error occurred: " + e.getMessage());
                         }
-                        System.out.println();
                     }
+                },
+                () -> System.out.println("Customer not found.\n")
+        );
+    }
 
-                    case 2 -> {
-                        System.out.print("Id: ");
-                        int id = Integer.parseInt(sc.nextLine().trim());
+    public void deleteCustomerById(){
+        int id = askID();
+        boolean deleted = customerDAO.delete(id);
+        System.out.println(deleted ? "Customer deactivated.\n" : "Customer not found.\n");
+    }
 
-                        customerDAO.findById(id).ifPresentOrElse(
-                                found -> {
-                                    System.out.println("ID: " + found.getId());
-                                    System.out.println("Name: " + found.getName());
-                                    System.out.println("Email: " + found.getEmail());
-                                },
-                                () -> System.out.println("Customer not found or inactive.\n")
-                        );
-                    }
+    private String askString(String label) {
+        while (true) {
+            System.out.print(label + ": ");
+            String input = sc.nextLine().trim();
 
-                    case 3 -> {
-                        System.out.print("Name: ");
-                        String name = sc.nextLine().trim();
-                        System.out.print("Email: ");
-                        String email = sc.nextLine().trim();
+            if (input.isEmpty()) {
+                System.out.println("This field cannot be empty.");
+                continue;
+            }
 
-                        boolean inserted = customerDAO.insert(new Customer(name, email));
-                        System.out.println(inserted ? "Customer created.\n" : "Could not create customer.\n");
-                    }
+            if (label.equalsIgnoreCase("Email") && (!input.contains("@") || !input.contains("."))){
+                System.out.println("Invalid email format (must contain '.' and '@')");
+                continue;
+            }
+            return input;
+        }
+    }
 
-                    case 4 -> {
-                        System.out.print("Id: ");
-                        int id = Integer.parseInt(sc.nextLine().trim());
+    private int askID(){
+        System.out.print("ID: ");
+        return readInt();
+    }
 
-                        System.out.print("Name: ");
-                        String name = sc.nextLine().trim();
-                        System.out.print("Email: ");
-                        String email = sc.nextLine().trim();
-
-                        boolean updated = customerDAO.update(id, new Customer(name, email));
-                        System.out.println(updated ? "Customer updated.\n" : "Customer not found.\n");
-                    }
-
-                    case 5 -> {
-                        System.out.print("Id: ");
-                        int id = Integer.parseInt(sc.nextLine().trim());
-
-                        boolean deleted = customerDAO.delete(id);
-                        System.out.println(deleted ? "Customer deleted.\n" : "Customer not found.\n");
-                    }
-
-                    default -> System.out.println("Invalid option.\n");
+    private int readInt(){
+        while (true){
+            String raw = sc.nextLine().trim();
+            try {
+                return Integer.parseInt(raw);
+            }catch (NumberFormatException e){
+                System.out.println("Enter a value number");
             }
         }
     }

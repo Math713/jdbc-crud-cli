@@ -1,13 +1,14 @@
 package com.math713.customercli;
 
-import com.math713.customercli.cli.CustomerMenu;
 import com.math713.customercli.dao.CustomerDAO;
+import com.math713.customercli.dao.TransactionDAO;
+
+import java.util.Scanner;
 
 public class Main {
     public static void main(String[] args){
+        Scanner sc = new Scanner(System.in);
         CustomerDAO customerDAO = new CustomerDAO();
-        CustomerMenu customerMenu = new CustomerMenu(customerDAO);
-
-        customerMenu.start();
+        TransactionDAO transactionDAO = new TransactionDAO();
     }
 }

@@ -84,7 +84,7 @@ public class TransactionMenu {
         }
     }
 
-    public void showBalance(){
+    private void showBalance(){
         int customer_id = askCustomerID();
         BigDecimal balance = transactionDAO.getBalance(customer_id);
         System.out.println("Balance for customerId= " + customer_id + " = " + balance);

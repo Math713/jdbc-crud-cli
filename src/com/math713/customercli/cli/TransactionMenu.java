@@ -14,9 +14,9 @@ public class TransactionMenu {
     private final Scanner sc;
     private final TransactionDAO transactionDAO;
 
-    public TransactionMenu(Scanner sc, TransactionDAO transactionDAO) {
-        this.sc = sc;
+    public TransactionMenu(TransactionDAO transactionDAO, Scanner sc) {
         this.transactionDAO = transactionDAO;
+        this.sc = sc;
     }
 
     public void start() {
